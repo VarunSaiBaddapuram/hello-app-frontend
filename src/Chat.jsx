@@ -1,49 +1,49 @@
-import {useContext, useEffect, useRef, useState} from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
-import {UserContext} from "./UserContext.jsx";
-import {uniqBy} from "lodash";
+import { UserContext } from "./UserContext.jsx";
+import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "./Contact";
 
 export default function Chat() {
-  const [ws,setWs] = useState(null);
-  const [onlinePeople,setOnlinePeople] = useState({});
-  const [offlinePeople,setOfflinePeople] = useState({});
-  const [selectedUserId,setSelectedUserId] = useState(null);
-  const [newMessageText,setNewMessageText] = useState('');
+  const [ws, setWs] = useState(null);
+  const [onlinePeople, setOnlinePeople] = useState({});
+  const [offlinePeople, setOfflinePeople] = useState({});
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [newMessageText, setNewMessageText] = useState('');
   const [showTools, setShowTools] = useState(false);
-  const [messages,setMessages] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [isWsReady, setIsWsReady] = useState(false);
-  
-  const EMOTICONS = ['😀','😂','🔥','💯','💀','✨','👍','❤️','☠️','🦾','🚀','👀','🎯','🧠','⚡','🌊','🪐', '💻', '🎮', '💡'];
+
+  const EMOTICONS = ['😀', '😂', '🔥', '💯', '💀', '✨', '👍', '❤️', '☠️', '🦾', '🚀', '👀', '🎯', '🧠', '⚡', '🌊', '🪐', '💻', '🎮', '💡'];
   const STICKERS = [
     { code: '[STICKER:alert]', label: 'WARNING SYSTEM', colors: 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)] border-yellow-400/50 bg-yellow-950/40' },
     { code: '[STICKER:hack]', label: 'SYSTEM OVERRIDE', colors: 'text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.8)] border-emerald-400/50 bg-emerald-950/40' },
     { code: '[STICKER:hello]', label: 'HELLO APPROVED', colors: 'text-fuchsia-400 drop-shadow-[0_0_10px_rgba(232,121,249,0.8)] border-fuchsia-400/50 bg-fuchsia-950/40' },
   ];
-  const {username,id,setId,setUsername} = useContext(UserContext);
+  const { username, id, setId, setUsername } = useContext(UserContext);
   const divUnderMessages = useRef();
 
 
   useEffect(() => {
     if (id) {
-    connectToWs();
-  }
+      connectToWs();
+    }
   }, [id]);
 
   function connectToWs(retryCount = 0) {
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4040';
+    const wsUrl = import.meta.env.VITE_WS_URL;
     const ws = new WebSocket(wsUrl);
     setWs(ws);
-    
+
     let heartbeatInterval;
 
     ws.addEventListener('open', () => {
       console.log('WS linked');
       // Reset retry count on successful connection
       retryCount = 0;
-      
+
       // Start message-based heartbeat to keep connection alive through proxies (Render/Vercel)
       heartbeatInterval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -51,9 +51,9 @@ export default function Chat() {
         }
       }, 30000); // 30 second pulse
     });
-    
+
     ws.addEventListener('message', handleMessage);
-    
+
     ws.addEventListener('close', (event) => {
       console.log('WS link broken', event.reason);
       clearInterval(heartbeatInterval);
@@ -64,9 +64,9 @@ export default function Chat() {
         // Exponential backoff: 1s, 2s, 4s, 8s, up to 15s max
         const baseDelay = event.code === 1006 ? 2000 : 1000; // Longer delay if connection failed abruptly
         const timeout = Math.min(baseDelay * Math.pow(2, retryCount), 15000);
-        
-        console.log(`Re-establishing link in ${timeout/1000}s... (Attempt ${retryCount + 1})`);
-        
+
+        console.log(`Re-establishing link in ${timeout / 1000}s... (Attempt ${retryCount + 1})`);
+
         setTimeout(() => {
           connectToWs(retryCount + 1);
         }, timeout);
@@ -81,7 +81,7 @@ export default function Chat() {
 
   function showOnlinePeople(peopleArray) {
     const people = {};
-    peopleArray.forEach(({userId,username}) => {
+    peopleArray.forEach(({ userId, username }) => {
       people[userId] = username;
     });
     setOnlinePeople(people);
@@ -89,7 +89,7 @@ export default function Chat() {
 
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    
+
     if (messageData.type === 'pong') {
       // Heartbeat received
       return;
@@ -105,7 +105,7 @@ export default function Chat() {
       showOnlinePeople(messageData.online);
     } else if ('text' in messageData) {
       if (messageData.sender === selectedUserId || (messageData.sender === id && messageData.recipient === selectedUserId)) {
-        setMessages(prev => ([...prev, {...messageData}]));
+        setMessages(prev => ([...prev, { ...messageData }]));
       }
     }
   }
@@ -176,7 +176,7 @@ export default function Chat() {
   useEffect(() => {
     const div = divUnderMessages.current;
     if (div) {
-      div.scrollIntoView({behavior:'smooth', block:'end'});
+      div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [messages]);
 
@@ -204,7 +204,7 @@ export default function Chat() {
 
   }, [selectedUserId]);
 
-  const onlinePeopleExclOurUser = {...onlinePeople};
+  const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
 
   const messagesWithoutDupes = uniqBy(messages, '_id');
@@ -220,7 +220,7 @@ export default function Chat() {
               id={userId}
               online={true}
               username={onlinePeopleExclOurUser[userId]}
-              onClick={() => {if(!userId) return; setSelectedUserId(userId);console.log({userId})}}
+              onClick={() => { if (!userId) return; setSelectedUserId(userId); console.log({ userId }) }}
               selected={userId === selectedUserId} />
           ))}
           {Object.keys(offlinePeople).map(userId => (
@@ -229,7 +229,7 @@ export default function Chat() {
               id={userId}
               online={false}
               username={offlinePeople[userId].username}
-              onClick={() => {if(!userId) return; setSelectedUserId(userId)}}
+              onClick={() => { if (!userId) return; setSelectedUserId(userId) }}
               selected={userId === selectedUserId} />
           ))}
         </div>
@@ -256,9 +256,9 @@ export default function Chat() {
             <div className="relative h-full">
               <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
                 {messagesWithoutDupes.map(message => (
-                  <div key={message._id} className={(message.sender === id ? 'text-right': 'text-left')}>
-                    <div className={"text-left inline-block p-3 my-2 rounded-2xl text-sm max-w-[80%] font-mono " + (message.sender === id ? 'bg-cyan-600/90 shadow-[0_0_15px_rgba(8,145,178,0.4)] text-white border border-cyan-400/50 rounded-br-none':'bg-slate-800/90 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(219,39,119,0.2)] text-cyan-50 rounded-bl-none')}>
-                      
+                  <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
+                    <div className={"text-left inline-block p-3 my-2 rounded-2xl text-sm max-w-[80%] font-mono " + (message.sender === id ? 'bg-cyan-600/90 shadow-[0_0_15px_rgba(8,145,178,0.4)] text-white border border-cyan-400/50 rounded-br-none' : 'bg-slate-800/90 border border-fuchsia-500/30 shadow-[0_0_15px_rgba(219,39,119,0.2)] text-cyan-50 rounded-bl-none')}>
+
                       {/* Sticker Interceptor */}
                       {message.text && message.text.startsWith('[STICKER:') && message.text.endsWith(']') ? (
                         <div className={"flex flex-col items-center justify-center p-4 rounded-xl border-dashed border-2 animate-pulse " + STICKERS.find(s => s.code === message.text)?.colors}>
@@ -267,7 +267,7 @@ export default function Chat() {
                       ) : (
                         message.text
                       )}
-                      
+
                       {message.file && (
                         <div className="mt-2">
                           <a target="_blank" className="flex items-center gap-2 border-b border-current pb-1 hover:text-white transition-colors" href={axios.defaults.baseURL + '/uploads/' + message.file}>
@@ -295,7 +295,7 @@ export default function Chat() {
                   <h3 className="font-cyber text-cyan-400 tracking-widest text-sm drop-shadow-[0_0_5px_rgba(34,211,238,0.5)]">EMOTIONS & DECALS</h3>
                   <button onClick={() => setShowTools(false)} className="text-slate-400 hover:text-white">&times;</button>
                 </div>
-                
+
                 <div className="mb-4">
                   <div className="text-xs text-slate-500 font-mono mb-2 uppercase tracking-wide">Quick Emoticons</div>
                   <div className="flex flex-wrap gap-2">
@@ -327,24 +327,24 @@ export default function Chat() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" />
                 </svg>
               </button>
-              
+
               <input type="text"
-                     value={newMessageText}
-                   onChange={ev => setNewMessageText(ev.target.value)}
-                   placeholder="AWAITING INPUT..."
-                   className="bg-transparent flex-grow text-cyan-50 placeholder-cyan-700/50 border-none outline-none px-4 font-mono w-full" />
-            <label className="p-3 text-cyan-400 cursor-pointer rounded-full hover:bg-cyan-900/50 hover:text-cyan-300 transition-colors">
-              <input type="file" className="hidden" onChange={sendFile} />
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                <path fillRule="evenodd" d="M18.97 3.659a2.25 2.25 0 00-3.182 0l-10.94 10.94a3.75 3.75 0 105.304 5.303l7.693-7.693a.75.75 0 011.06 1.06l-7.693 7.693a5.25 5.25 0 11-7.424-7.424l10.939-10.94a3.75 3.75 0 115.303 5.304L9.097 18.835l-.008.008-.007.007-.002.002-.003.002A2.25 2.25 0 015.91 15.66l7.81-7.81a.75.75 0 011.061 1.06l-7.81 7.81a.75.75 0 001.054 1.068L18.97 6.84a2.25 2.25 0 000-3.182z" clipRule="evenodd" />
-              </svg>
-            </label>
-            <button type="submit" className="bg-gradient-to-r from-cyan-600 to-fuchsia-600 p-3 text-white rounded-full shadow-[0_0_15px_rgba(219,39,119,0.5)] hover:shadow-[0_0_20px_rgba(219,39,119,0.8)] transition-all hover:scale-[1.05] active:scale-95">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-              </svg>
-            </button>
-          </form>
+                value={newMessageText}
+                onChange={ev => setNewMessageText(ev.target.value)}
+                placeholder="AWAITING INPUT..."
+                className="bg-transparent flex-grow text-cyan-50 placeholder-cyan-700/50 border-none outline-none px-4 font-mono w-full" />
+              <label className="p-3 text-cyan-400 cursor-pointer rounded-full hover:bg-cyan-900/50 hover:text-cyan-300 transition-colors">
+                <input type="file" className="hidden" onChange={sendFile} />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                  <path fillRule="evenodd" d="M18.97 3.659a2.25 2.25 0 00-3.182 0l-10.94 10.94a3.75 3.75 0 105.304 5.303l7.693-7.693a.75.75 0 011.06 1.06l-7.693 7.693a5.25 5.25 0 11-7.424-7.424l10.939-10.94a3.75 3.75 0 115.303 5.304L9.097 18.835l-.008.008-.007.007-.002.002-.003.002A2.25 2.25 0 015.91 15.66l7.81-7.81a.75.75 0 011.061 1.06l-7.81 7.81a.75.75 0 001.054 1.068L18.97 6.84a2.25 2.25 0 000-3.182z" clipRule="evenodd" />
+                </svg>
+              </label>
+              <button type="submit" className="bg-gradient-to-r from-cyan-600 to-fuchsia-600 p-3 text-white rounded-full shadow-[0_0_15px_rgba(219,39,119,0.5)] hover:shadow-[0_0_20px_rgba(219,39,119,0.8)] transition-all hover:scale-[1.05] active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+              </button>
+            </form>
           </div>
         )}
       </div>

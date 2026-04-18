@@ -1,10 +1,10 @@
 import Avatar from "./Avatar.jsx";
 
-export default function Contact({id, username, onClick, selected, online}) {
+export default function Contact({ id, username, onClick, selected, online }) {
   return (
     <div key={id} onClick={() => onClick(id)}
-         className={"border-b border-white/5 flex items-center gap-3 cursor-pointer transition-all duration-300 relative "
-            + (selected ? 'bg-cyan-900/20 backdrop-blur-sm' : 'hover:bg-white/5')}>
+      className={"border-b border-white/5 flex items-center gap-3 cursor-pointer transition-all duration-300 relative "
+        + (selected ? 'bg-cyan-900/20 backdrop-blur-sm' : 'hover:bg-white/5')}>
       {selected && (
         <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.8)] rounded-r-md"></div>
       )}

@@ -1,10 +1,10 @@
-export default function Avatar({userId, username, online}) {
+export default function Avatar({ userId, username, online }) {
   const colors = [
-    'bg-fuchsia-600 shadow-[0_0_10px_rgba(192,38,211,0.6)] text-white', 
+    'bg-fuchsia-600 shadow-[0_0_10px_rgba(192,38,211,0.6)] text-white',
     'bg-cyan-600 shadow-[0_0_10px_rgba(8,145,178,0.6)] text-white',
-    'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.6)] text-slate-900 font-bold', 
+    'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.6)] text-slate-900 font-bold',
     'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] text-white',
-    'bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.6)] text-white', 
+    'bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.6)] text-white',
     'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.6)] text-white',
   ];
   const userIdBase10 = parseInt(userId.substring(10), 16);
