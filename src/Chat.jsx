@@ -37,24 +37,48 @@ export default function Chat() {
     const ws = new WebSocket(wsUrl);
     setWs(ws);
     
+    let heartbeatInterval;
+
     ws.addEventListener('open', () => {
-      console.log('WS connected');
+      console.log('WS linked');
+      // Reset retry count on successful connection
+      retryCount = 0;
+      
+      // Start message-based heartbeat to keep connection alive through proxies (Render/Vercel)
+      heartbeatInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 30000); // 30 second pulse
     });
     
     ws.addEventListener('message', handleMessage);
     
-    ws.addEventListener('close', () => {
-      console.log('WS closed');
+    ws.addEventListener('close', (event) => {
+      console.log('WS link broken', event.reason);
+      clearInterval(heartbeatInterval);
+      setIsWsReady(false);
+
       if (id) {
-        // Exponential backoff to prevent reconnect flooding
-        const timeout = Math.min(1000 * Math.pow(2, retryCount), 10000);
+        // Render Cold Start / Robust Reconnection Logic
+        // Exponential backoff: 1s, 2s, 4s, 8s, up to 15s max
+        const baseDelay = event.code === 1006 ? 2000 : 1000; // Longer delay if connection failed abruptly
+        const timeout = Math.min(baseDelay * Math.pow(2, retryCount), 15000);
+        
+        console.log(`Re-establishing link in ${timeout/1000}s... (Attempt ${retryCount + 1})`);
+        
         setTimeout(() => {
-          console.log(`Disconnected. Trying to reconnect... (retry ${retryCount + 1})`);
           connectToWs(retryCount + 1);
         }, timeout);
       }
     });
+
+    ws.addEventListener('error', (err) => {
+      console.error('WS Error:', err);
+      ws.close(); // Ensure close event fires
+    });
   }
+
   function showOnlinePeople(peopleArray) {
     const people = {};
     peopleArray.forEach(({userId,username}) => {
@@ -62,14 +86,21 @@ export default function Chat() {
     });
     setOnlinePeople(people);
   }
+
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    console.log({ev,messageData});
+    
+    if (messageData.type === 'pong') {
+      // Heartbeat received
+      return;
+    }
+
     if (messageData.type === 'auth_success') {
-      console.log('WS AUTH DONE ');
+      console.log('WS authenticated');
       setIsWsReady(true);
       return;
     }
+
     if ('online' in messageData) {
       showOnlinePeople(messageData.online);
     } else if ('text' in messageData) {
