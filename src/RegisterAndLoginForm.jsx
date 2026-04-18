@@ -15,9 +15,8 @@ export default function RegisterAndLoginForm() {
     try{
       const url = isLoginOrRegister === 'register' ? 'register' : 'login';
       const { data } = await axios.post(
-        `/${url}`,
-        { username, password },
-        { withCredentials: true }
+        `/api/${url}`,
+        { username, password }
       );
       console.log('LOGIN SUCCESS:', data);
       setLoggedInUsername(username);

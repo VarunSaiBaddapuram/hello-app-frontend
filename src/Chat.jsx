@@ -110,7 +110,7 @@ export default function Chat() {
     }
   }
   function logout() {
-    axios.post('/logout').then(() => {
+    axios.post('/api/logout').then(() => {
       setWs(null);
       setId(null);
       setUsername(null);
@@ -181,7 +181,7 @@ export default function Chat() {
   }, [messages]);
 
   useEffect(() => {
-    axios.get('/people').then(res => {
+    axios.get('/api/people').then(res => {
       const offlinePeopleArr = res.data
         .filter(p => p._id !== id)
         .filter(p => !Object.keys(onlinePeople).includes(p._id));
@@ -198,7 +198,7 @@ export default function Chat() {
 
     console.log("FETCHING messages for:", selectedUserId);
 
-    axios.get('/messages/' + selectedUserId)
+    axios.get('/api/messages/' + selectedUserId)
       .then(res => setMessages(res.data))
       .catch(err => console.log('Fetch error:', err));
 
